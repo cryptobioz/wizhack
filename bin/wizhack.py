@@ -90,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("utility", choices=utils)
     parser.add_argument("target", nargs="?", type=str)
     parser.add_argument("function", nargs="?", type=str)
-    parser.add_argument("-o", "--output", type=file, help="Export result to a file") 
+    parser.add_argument("-o", "--output", type=str, help="Export result to a file") 
     parser.add_argument("-c", "--clipboard", action="store_true", help="Copy result to the clipboard")
     args = parser.parse_args()
 
