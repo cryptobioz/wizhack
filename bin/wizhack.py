@@ -3,7 +3,7 @@
 
 """
 Generate shellcodes and webshells quickly.
-Copyright (C) 2014  Leo 'cryptobioz' Depriester (leo.depriester@exadot.fr)
+Copyright (C) 2014  Leo Depriester (leo.depriester@exadot.fr)
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ import os, sys, requests, argparse, struct, pyperclip
 sys.path.insert(0, sys.path[0]+"/../lib/wizhack/")
 from shellcodes import *
 from webshells import *
+from exploits import *
 
 def get_shellcode(target, function, clipboard):
     shellcode_class = sys.modules["shellcodes."+target.replace("/", "_")+"_"+function]
@@ -44,7 +45,11 @@ def get_webshell(target, function, output, clipboard):
         of.close()
     else:
         print webshell
-    
+   
+def run_exploit(target):
+    exploit_class = sys.modules["exploits."+target]
+    exploit = exploit_class.Exploit.run()
+
 def check_function(util, target, function):
     functions = []
     for mod in sys.modules.keys():
@@ -65,14 +70,21 @@ def check_function(util, target, function):
 
 def check_target(util, target):
     targets = []
-    for mod in sys.modules.keys():
-        if util+"." in mod and "_" in mod:
-            s = mod.replace(util+".", "").split("_")
-            if util == "webshells":
-                targets.append(s[0])
-            else:
-                targets.append(s[0]+"/"+s[1])
-    targets = set(targets)
+    if util == "exploits":
+        for mod in sys.modules.keys():
+            if util+"." in mod and "-" in mod:
+                s = mod.replace(util+".", "")
+                targets.append(s)
+        targets = set(targets)
+    else:
+        for mod in sys.modules.keys():
+            if util+"." in mod and "_" in mod:
+                s = mod.replace(util+".", "").split("_")
+                if util == "webshells":
+                    targets.append(s[0])
+                else:
+                    targets.append(s[0]+"/"+s[1])
+        targets = set(targets)
     
     if target in targets:
         return True
@@ -84,9 +96,9 @@ def check_target(util, target):
 
 
 if __name__ == "__main__":
-    utils = ["shellcode", "webshell"]
+    utils = ["shellcode", "webshell", "exploit"]
 
-    parser = argparse.ArgumentParser(description='Get shellcodes and webshells quickly.')
+    parser = argparse.ArgumentParser(description='Get shellcodes, webshells and exploits quickly.')
     parser.add_argument("utility", choices=utils)
     parser.add_argument("target", nargs="?", type=str)
     parser.add_argument("function", nargs="?", type=str)
@@ -104,3 +116,6 @@ if __name__ == "__main__":
         if check_target("webshells", args.target):
             if check_function("webshells", args.target, args.function):
                 get_webshell(args.target, args.function, args.output, args.clipboard)
+    elif args.utility == "exploit":
+        if check_target("exploits", args.target):
+            run_exploit(args.target)
